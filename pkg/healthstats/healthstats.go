@@ -1,7 +1,6 @@
 package healthstats
 
 import (
-	"fmt"
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/disk"
 	"github.com/shirou/gopsutil/v3/mem"
@@ -17,8 +16,6 @@ func RamUsage() (float64, error) {
 		return 0, err
 	}
 
-	fmt.Println(memStats.UsedPercent)
-
 	return memStats.UsedPercent, nil
 }
 
@@ -28,8 +25,6 @@ func CpuUsage() ([]float64, error) {
 	if err != nil {
 		return []float64{}, err
 	}
-
-	fmt.Println(cpuPercent)
 
 	return cpuPercent, nil
 }
@@ -41,8 +36,6 @@ func DiskUsage() (float64, error) {
 		return 0, err
 	}
 
-	fmt.Println(diskStats.UsedPercent)
-
 	return diskStats.UsedPercent, nil
 }
 
@@ -53,8 +46,43 @@ func NetworkUsage() (uint64, uint64, error) {
 		return 0, 0, err
 	}
 
-	fmt.Println("recv", netStats[0].BytesRecv/MEGA)
-	fmt.Println("sent", netStats[0].BytesSent/MEGA)
-
 	return netStats[0].BytesRecv / MEGA, netStats[0].BytesSent / MEGA, nil
+}
+
+type SystemUsage struct {
+	RamUsage         float64
+	DiskUsage        float64
+	CpuPercentages   []float64
+	NetworkBytesRecv uint64
+	NetworkBytesSent uint64
+}
+
+func CurrentSystemUsage() (SystemUsage, error) {
+	ramUsage, err := RamUsage()
+	if err != nil {
+		return SystemUsage{}, err
+	}
+
+	diskUsage, err := DiskUsage()
+	if err != nil {
+		return SystemUsage{}, err
+	}
+
+	cpuPercentages, err := CpuUsage()
+	if err != nil {
+		return SystemUsage{}, err
+	}
+
+	networkBytesRecv, networkBytesSent, err := NetworkUsage()
+	if err != nil {
+		return SystemUsage{}, err
+	}
+
+	return SystemUsage{
+		RamUsage:         ramUsage,
+		DiskUsage:        diskUsage,
+		CpuPercentages:   cpuPercentages,
+		NetworkBytesRecv: networkBytesRecv,
+		NetworkBytesSent: networkBytesSent,
+	}, nil
 }
