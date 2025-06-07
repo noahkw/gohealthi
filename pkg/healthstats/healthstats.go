@@ -1,6 +1,7 @@
 package healthstats
 
 import (
+	health "github.com/noahkw/gohealthi/proto"
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/disk"
 	"github.com/shirou/gopsutil/v3/mem"
@@ -49,40 +50,46 @@ func NetworkUsage() (uint64, uint64, error) {
 	return netStats[0].BytesRecv / MEGA, netStats[0].BytesSent / MEGA, nil
 }
 
-type SystemUsage struct {
-	RamUsage         float64
-	DiskUsage        float64
-	CpuPercentages   []float64
-	NetworkBytesRecv uint64
-	NetworkBytesSent uint64
-}
-
-func CurrentSystemUsage() (SystemUsage, error) {
+func CurrentSystemUsage() (health.HealthResponse, error) {
 	ramUsage, err := RamUsage()
 	if err != nil {
-		return SystemUsage{}, err
+		return health.HealthResponse{}, err
 	}
 
 	diskUsage, err := DiskUsage()
 	if err != nil {
-		return SystemUsage{}, err
+		return health.HealthResponse{}, err
 	}
 
 	cpuPercentages, err := CpuUsage()
 	if err != nil {
-		return SystemUsage{}, err
+		return health.HealthResponse{}, err
 	}
 
 	networkBytesRecv, networkBytesSent, err := NetworkUsage()
 	if err != nil {
-		return SystemUsage{}, err
+		return health.HealthResponse{}, err
 	}
 
-	return SystemUsage{
+	return health.HealthResponse{
 		RamUsage:         ramUsage,
 		DiskUsage:        diskUsage,
-		CpuPercentages:   cpuPercentages,
+		CpuPercentage:    cpuPercentages,
+		CpuPercentageAvg: averageCpuPercentage(cpuPercentages),
 		NetworkBytesRecv: networkBytesRecv,
 		NetworkBytesSent: networkBytesSent,
 	}, nil
+}
+
+func averageCpuPercentage(percentages []float64) float64 {
+	if len(percentages) == 0 {
+		return 0
+	}
+
+	var total float64
+	for _, percentage := range percentages {
+		total += percentage
+	}
+
+	return total / float64(len(percentages))
 }

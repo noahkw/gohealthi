@@ -1,0 +1,22 @@
+
+syntax = "proto3";
+
+option go_package = "github.com/noahkw/gohealthi/proto/health";
+
+package health;
+
+service Health {
+  rpc GetHealth(HealthRequest) returns (HealthResponse) {}
+}
+
+message HealthRequest {
+}
+
+message HealthResponse {
+  double ram_usage = 1;
+  double disk_usage = 2;
+  repeated double cpu_percentage = 3;
+  double cpu_percentage_avg = 4;
+  uint64 network_bytes_recv = 5;
+  uint64 network_bytes_sent = 6;
+}
