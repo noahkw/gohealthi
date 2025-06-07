@@ -1,0 +1,4 @@
+*.exe
+*-arm64
+*.iml
+.idea/
