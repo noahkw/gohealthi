@@ -11,3 +11,11 @@ $env:GOOS="linux"; $env:GOARCH="arm64"; go build -o gohealthi-arm64 ./cmd/goheal
 ```
 
 This creates a `gohealthi-arm64` binary in the current directory.
+
+## Hacking
+
+Regenerate proto sources:
+
+```bash
+protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative ./proto/health.proto
+```
