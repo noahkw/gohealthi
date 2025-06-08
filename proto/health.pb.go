@@ -23,6 +23,7 @@ const (
 
 type HealthRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	Minutes       int32                  `protobuf:"varint,1,opt,name=minutes,proto3" json:"minutes,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -55,6 +56,13 @@ func (x *HealthRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use HealthRequest.ProtoReflect.Descriptor instead.
 func (*HealthRequest) Descriptor() ([]byte, []int) {
 	return file_proto_health_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *HealthRequest) GetMinutes() int32 {
+	if x != nil {
+		return x.Minutes
+	}
+	return 0
 }
 
 type HealthResponse struct {
@@ -145,8 +153,9 @@ var File_proto_health_proto protoreflect.FileDescriptor
 
 const file_proto_health_proto_rawDesc = "" +
 	"\n" +
-	"\x12proto/health.proto\x12\x06health\"\x0f\n" +
-	"\rHealthRequest\"\xfd\x01\n" +
+	"\x12proto/health.proto\x12\x06health\")\n" +
+	"\rHealthRequest\x12\x18\n" +
+	"\aminutes\x18\x01 \x01(\x05R\aminutes\"\xfd\x01\n" +
 	"\x0eHealthResponse\x12\x1b\n" +
 	"\tram_usage\x18\x01 \x01(\x01R\bramUsage\x12\x1d\n" +
 	"\n" +

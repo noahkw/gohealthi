@@ -3,16 +3,22 @@ package main
 import (
 	"context"
 	"flag"
+	"log"
+	"time"
+
 	health "github.com/noahkw/gohealthi/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"log"
-	"time"
 )
 
 var addr = flag.String("server", "localhost:8000", "server to connect to")
+var N = flag.Int("n", 5, "number of minutes to average health stats over")
 
 func main() {
+	flag.Parse()
+
+	log.Printf("Querying health stats from %s for the last %d minutes", *addr, *N)
+
 	connection, err := grpc.NewClient(*addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
 	if err != nil {
@@ -26,7 +32,7 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
-	resp, err := client.GetHealth(ctx, &health.HealthRequest{})
+	resp, err := client.GetHealth(ctx, &health.HealthRequest{Minutes: int32(*N)})
 	if err != nil {
 		log.Fatalf("could not request health %v", err)
 	}

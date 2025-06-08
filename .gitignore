@@ -2,3 +2,4 @@
 *-arm64
 *.iml
 .idea/
+.vscode/
