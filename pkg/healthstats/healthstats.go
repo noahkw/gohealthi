@@ -2,9 +2,9 @@ package healthstats
 
 import (
 	"fmt"
+	"github.com/noahkw/gohealthi/pkg/models"
 	"time"
 
-	health "github.com/noahkw/gohealthi/proto"
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/disk"
 	"github.com/shirou/gopsutil/v3/mem"
@@ -52,8 +52,8 @@ func NetworkUsage() (uint64, uint64, error) {
 	return netStats[0].BytesRecv / MEGA, netStats[0].BytesSent / MEGA, nil
 }
 
-func SystemUsageMean(healthResponses []health.HealthResponse) (*health.HealthResponse, error) {
-	if len(healthResponses) == 0 {
+func SystemUsageMean(systemUsages []*models.SystemUsage) (*models.SystemUsage, error) {
+	if len(systemUsages) == 0 {
 		return nil, fmt.Errorf("no health responses provided")
 	}
 
@@ -61,7 +61,7 @@ func SystemUsageMean(healthResponses []health.HealthResponse) (*health.HealthRes
 	var totalNetworkBytesRecv, totalNetworkBytesSent uint64
 	var totalCpuPercentageAvg float64
 
-	for _, response := range healthResponses {
+	for _, response := range systemUsages {
 		totalRamUsage += response.RamUsage
 		totalDiskUsage += response.DiskUsage
 		totalNetworkBytesRecv += response.NetworkBytesRecv
@@ -70,63 +70,56 @@ func SystemUsageMean(healthResponses []health.HealthResponse) (*health.HealthRes
 		totalCpuPercentageAvg += response.CpuPercentageAvg
 	}
 
-	count := float64(len(healthResponses))
+	count := float64(len(systemUsages))
 
 	meanRamUsage := totalRamUsage / count
 	meanDiskUsage := totalDiskUsage / count
-	meanNetworkBytesRecv := totalNetworkBytesRecv / uint64(len(healthResponses))
-	meanNetworkBytesSent := totalNetworkBytesSent / uint64(len(healthResponses))
+	meanNetworkBytesRecv := totalNetworkBytesRecv / uint64(len(systemUsages))
+	meanNetworkBytesSent := totalNetworkBytesSent / uint64(len(systemUsages))
 
-	return &health.HealthResponse{
-		RamUsage:         meanRamUsage,
-		DiskUsage:        meanDiskUsage,
-		CpuPercentage:    make([]float64, 0),
-		CpuPercentageAvg: totalCpuPercentageAvg / count,
-		NetworkBytesRecv: meanNetworkBytesRecv,
-		NetworkBytesSent: meanNetworkBytesSent,
-	}, nil
+	return models.NewSystemUsage(
+		meanRamUsage,
+		meanDiskUsage,
+		[]float64{},
+		totalCpuPercentageAvg/count,
+		meanNetworkBytesRecv,
+		meanNetworkBytesSent,
+	), nil
 }
 
-func CurrentSystemUsage() (health.HealthResponse, error) {
+func CurrentSystemUsage() (*models.SystemUsage, error) {
 	ramUsage, err := RamUsage()
 	if err != nil {
-		return health.HealthResponse{}, err
+		return nil, err
 	}
 
 	diskUsage, err := DiskUsage()
 	if err != nil {
-		return health.HealthResponse{}, err
+		return nil, err
 	}
 
 	cpuPercentages, err := CpuUsage()
 	if err != nil {
-		return health.HealthResponse{}, err
+		return nil, err
 	}
 
 	networkBytesRecv, networkBytesSent, err := NetworkUsage()
 	if err != nil {
-		return health.HealthResponse{}, err
+		return nil, err
 	}
 
-	return health.HealthResponse{
-		RamUsage:         ramUsage,
-		DiskUsage:        diskUsage,
-		CpuPercentage:    cpuPercentages,
-		CpuPercentageAvg: averageCpuPercentage(cpuPercentages),
-		NetworkBytesRecv: networkBytesRecv,
-		NetworkBytesSent: networkBytesSent,
-	}, nil
+	return models.NewSystemUsage(ramUsage, diskUsage, cpuPercentages, mean(cpuPercentages), networkBytesRecv, networkBytesSent), nil
 }
 
-func averageCpuPercentage(percentages []float64) float64 {
-	if len(percentages) == 0 {
+func mean(arr []float64) float64 {
+	if len(arr) == 0 {
 		return 0
 	}
 
 	var total float64
-	for _, percentage := range percentages {
+	for _, percentage := range arr {
 		total += percentage
 	}
 
-	return total / float64(len(percentages))
+	return total / float64(len(arr))
 }

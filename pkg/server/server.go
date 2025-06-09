@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"github.com/noahkw/gohealthi/pkg/models"
 	"log"
 	"net"
 	"time"
@@ -15,16 +16,16 @@ import (
 )
 
 var port = flag.Int("port", 8337, "Server port")
-var systemUsageQueue = ringbuffer.NewQueue[health.HealthResponse](15)
 
-type server struct {
+type Server struct {
 	health.UnimplementedHealthServer
+	systemUsageQueue *ringbuffer.Queue[*models.SystemUsage]
 }
 
-func (s *server) GetHealth(_ context.Context, in *health.HealthRequest) (*health.HealthResponse, error) {
-	log.Printf("Received %s", in.String())
+func (healthServer *Server) GetHealth(_ context.Context, in *health.HealthRequest) (*health.HealthResponse, error) {
+	log.Printf("Received %v", in.String())
 
-	lastN := systemUsageQueue.GetLastN(int(in.Minutes))
+	lastN := healthServer.systemUsageQueue.GetLastN(int(in.Minutes))
 
 	avgLastN, err := healthstats.SystemUsageMean(lastN)
 
@@ -34,7 +35,7 @@ func (s *server) GetHealth(_ context.Context, in *health.HealthRequest) (*health
 
 	}
 
-	return avgLastN, nil
+	return models.ToHealthResponse(avgLastN), nil
 }
 
 func runPeriodically(duration time.Duration, callback func()) {
@@ -56,6 +57,8 @@ func Serve() {
 		log.Fatalf("failed to listen on port %v, %v", port, err)
 	}
 
+	systemUsageQueue := ringbuffer.NewQueue[*models.SystemUsage](15)
+
 	runPeriodically(time.Minute, func() {
 		currentStats, err := healthstats.CurrentSystemUsage()
 
@@ -70,7 +73,11 @@ func Serve() {
 
 	serv := grpc.NewServer()
 
-	health.RegisterHealthServer(serv, &server{})
+	healthServer := &Server{
+		systemUsageQueue: systemUsageQueue,
+	}
+
+	health.RegisterHealthServer(serv, healthServer)
 	log.Printf("listening at %v", listener.Addr())
 
 	if err := serv.Serve(listener); err != nil {

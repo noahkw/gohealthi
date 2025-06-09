@@ -4,8 +4,8 @@ import (
 	"flag"
 	"fmt"
 	"github.com/noahkw/gohealthi/pkg/healthstats"
+	"github.com/noahkw/gohealthi/pkg/models"
 	"github.com/noahkw/gohealthi/pkg/server"
-	health "github.com/noahkw/gohealthi/proto"
 	"os"
 )
 
@@ -26,12 +26,12 @@ func main() {
 		panic(err)
 	}
 
-	formatSystemUsage(systemUsage)
+	formatSystemUsage(*systemUsage)
 
 	server.Serve()
 }
 
-func formatSystemUsage(usage health.HealthResponse) {
+func formatSystemUsage(usage models.SystemUsage) {
 	fmt.Printf("RAM Usage: %.2f%%\n", usage.RamUsage)
 	fmt.Printf("Disk Usage: %.2f%%\n", usage.DiskUsage)
 	fmt.Println("CPU Percentages:")
